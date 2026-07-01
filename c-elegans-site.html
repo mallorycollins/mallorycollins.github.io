@@ -1,0 +1,822 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C. elegans Reproduction & Germline Atlas</title>
+    <style>
+        /* Core Layout & Variable Styling */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-site: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        body {
+            background-color: var(--bg-site);
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        /* --- STICKY NAVIGATION MENU --- */
+        .site-navbar {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            height: 70px;
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            gap: 8px;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 10px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background-color: #f1f5f9;
+        }
+
+        .nav-link.active {
+            color: white;
+            background-color: var(--primary);
+        }
+
+        /* --- SPA VIEW PAGE SWITCHER GRAPHICS --- */
+        .page-view {
+            display: none; /* Controlled via JS state-switch */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .page-view.active-view {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Section containers wrapper */
+        .section {
+            padding: 60px 20px;
+            max-width: 1200px;
+            margin: 20px auto 40px auto;
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* --- INTRODUCTION HOME PAGE MAIN STYLING --- */
+        .intro-hero {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .intro-hero h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.75rem;
+            color: #1e3a8a;
+        }
+
+        .intro-hero p {
+            font-size: 1.1rem;
+            color: #1e40af;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .accordion-title-header {
+            font-size: 1.5rem;
+            color: #0f172a;
+            margin: 40px 0 15px 0;
+            font-weight: 700;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* Accordion Style Interactive Grid */
+        .facts-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 15px 0 40px 0;
+        }
+
+        .fact-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .fact-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .fact-header {
+            padding: 24px;
+            margin: 0;
+            font-size: 1.25rem;
+            color: #0f172a;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            user-select: none;
+        }
+
+        .fact-header::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .fact-card.expanded .fact-header::after {
+            transform: rotate(45deg);
+        }
+
+        .fact-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fafafa;
+        }
+
+        .fact-card.expanded .fact-content {
+            max-height: 1000px; /* Accommodate text and image heights cleanly */
+        }
+
+        .fact-body-inner {
+            padding: 0 24px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 20px;
+        }
+
+        .fact-card p {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Specific Microscopy Layout for Tabs */
+        .microscopy-showcase {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .microscopy-item {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            flex: 1;
+            min-width: 250px;
+            max-width: 320px; /* Aligns secondary panel images neatly with the first layout scale */
+        }
+
+        .microscopy-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+            display: block;
+            margin-bottom: 10px;
+            object-fit: contain;
+            background: #f8fafc;
+        }
+
+        .microscopy-caption {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .references-wrapper {
+            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 40px;
+        }
+
+        .references-wrapper h4 {
+            margin: 0 0 15px 0;
+            color: #334155;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .references-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .references-list li {
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .references-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .references-list a {
+            color: var(--primary);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .references-list a:hover {
+            text-decoration: underline;
+        }
+
+        /* --- SECTION 1 STYLING --- */
+        .comparison-grid {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .anatomy-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            flex: 1;
+            min-width: 320px;
+            max-width: 550px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .anatomy-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .hermaphrodite-card:hover { border-color: #8b5cf6; }
+        .male-card:hover { border-color: #06b6d4; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card-header h3 { margin: 0; font-size: 1.5rem; color: #2d3748; }
+        .sex-symbol { font-size: 1.8rem; font-weight: bold; }
+        .hermaphrodite-card .sex-symbol { color: #8b5cf6; }
+        .male-card .sex-symbol { color: #06b6d4; }
+
+        .image-container {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+
+        .image-container img { display: block; max-width: 100%; height: auto; }
+        .features-list h4 { color: #4a5568; margin-bottom: 10px; }
+        .features-list ul { list-style-type: none; padding: 0; margin: 0; }
+        .features-list li { padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
+        .features-list li:last-child { border-bottom: none; }
+
+        /* --- SECTION 2 STYLING --- */
+        .interactive-container { display: flex; gap: 40px; margin-top: 30px; flex-wrap: wrap; }
+        .visual-panel-left { flex: 1.2; min-width: 320px; display: flex; flex-direction: column; gap: 24px; }
+        .diagram-display-window { width: 100%; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); background: #ffffff; padding: 10px; box-sizing: border-box; }
+        .diagram-display-window img { display: block; width: 100%; height: auto; border-radius: 8px; }
+        .gonad-arm-visual { display: flex; flex-direction: column; gap: 10px; }
+        
+        .zone-block {
+            background: #f8fafc;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .zone-num { background: #e2e8f0; color: #475569; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; }
+        .zone-name { font-weight: 600; color: #334155; font-size: 1rem; }
+        
+        .zone-block:hover, .zone-block.active {
+            border-color: var(--accent-color);
+            background-color: #ffffff;
+            transform: translateX(6px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .zone-block:hover .zone-num, .zone-block.active .zone-num { background-color: var(--accent-color); color: #ffffff; }
+        .info-panel { flex: 1; min-width: 340px; background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); transition: opacity 0.15s ease; display: flex; flex-direction: column; gap: 20px; }
+        .info-panel h3 { margin: 0; font-size: 1.6rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .info-group h4 { margin: 0 0 6px 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+        .info-group p { margin: 0; color: #334155; line-height: 1.6; }
+        .gene-tags { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        .gene-tags li { background: #f1f5f9; color: #1e293b; padding: 4px 12px; border-radius: 20px; font-family: monospace; font-size: 0.85rem; font-weight: bold; border: 1px solid #cbd5e1; }
+        .reference-box { background-color: #f8fafc; border-left: 4px solid #64748b; padding: 15px; border-radius: 0 8px 8px 0; }
+
+        /* --- SECTION 3 STYLING --- */
+        .sperm-workspace { display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px; margin-top: 20px; }
+        @media (max-width: 900px) { .sperm-workspace { grid-template-columns: 1fr; } }
+        .diagram-interactive-canvas { position: relative; background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .full-diagram-wrapper { position: relative; width: 100%; }
+        .full-diagram-wrapper img { display: block; width: 100%; height: auto; border-radius: 8px; }
+
+        /* Hotspot Map Overlays */
+        .hotspot-overlay { position: absolute; cursor: pointer; background: rgba(37, 99, 235, 0); transition: background 0.2s ease, border 0.2s ease; border-radius: 6px; border: 2px dashed transparent; }
+        .hotspot-overlay:hover, .hotspot-overlay.active { background: rgba(37, 99, 235, 0.05); border-color: #2563eb; }
+
+        /* Hotspots locations mapping for wormbook-spermatogenesis-spermiogenesis.png */
+        .hs-meiosis1   { top: 2%;   left: 2%;   width: 46%;  height: 44%; }
+        .hs-meiosis2   { top: 48%;  left: 2%;   width: 32%;  height: 25%; }
+        .hs-budding    { top: 40%;  left: 35%;  width: 35%;  height: 33%; }
+        .hs-spermatid  { top: 44%;  left: 71%;  width: 13%;  height: 30%; }
+        .hs-activation { top: 41%;  left: 85%;  width: 14%;  height: 34%; }
+        .hs-fbmo       { top: 62%;  left: 2%;   width: 96%;  height: 36%; }
+
+        .sperm-desc-card { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 15px; }
+        .sperm-desc-content { display: flex; flex-direction: column; gap: 12px; }
+        .sperm-desc-content p { margin: 0; color: #334155; line-height: 1.6; }
+        .pathway-box { background: #f8fafc; border-left: 4px solid var(--border-color, #2563eb); padding: 12px 14px; border-radius: 0 8px 8px 0; margin-top: 8px; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<nav class="site-navbar">
+    <div class="nav-container">
+        <a class="nav-brand" onclick="switchPage('home')"><em>C. elegans</em> Reproductive Atlas</a>
+        <ul class="nav-menu">
+            <li><a class="nav-link active" id="lnk-home" onclick="switchPage('home')">Introduction</a></li>
+            <li><a class="nav-link" id="lnk-sec1" onclick="switchPage('sec1')">Sex Anatomy</a></li>
+            <li><a class="nav-link" id="lnk-sec2" onclick="switchPage('sec2')">Germline Map</a></li>
+            <li><a class="nav-link" id="lnk-sec3" onclick="switchPage('sec3')">Spermatogenesis</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main id="page-home" class="page-view active-view">
+    <div class="section">
+        <div class="section-header">
+            <h2><em>C. elegans</em>— A Model Organism to Study Fertilization and Reproduction</h2>
+            <p>An introduction to <em>Caenorhabditis elegans</em> utility in developmental reproduction and structural fertility mechanics.</p>
+        </div>
+
+        <div class="intro-hero">
+            <h3>Why Study the Worm?</h3>
+            <p>
+                First introduced to molecular neurology and developmental biology arrays by Dr. Sydney Brenner in 1974, the small soil-dwelling nematode <em>Caenorhabditis elegans</em> has emerged as one of the premier biological model organisms. Its simple anatomy, genetic tractability, and highly predictable cellular lineages provide an unparalleled template for unlocking the foundational rules governing eukaryotic fertility, tissue differentiation, and sexual dimorphism.
+            </p>
+        </div>
+
+        <h3 class="accordion-title-header">Notable Experimental Attributes for Reproductive Research</h3>
+
+        <div class="facts-grid">
+            
+            <div class="fact-card" id="card-translucent">
+                <div class="fact-header" onclick="toggleCard('card-translucent')">Optically Translucent</div>
+                <div class="fact-content">
+                    <div class="fact-body-inner">
+                        <p>The entire body wall is completely transparent across all lifecycle stages. Because they are transparent, we can observe fertilization without dissection. Researchers can clearly observe organogenesis, structural cell layouts, track individual egg or sperm transitions, and verify internal fertilizations live in vivo using differential interference contrast (DIC) microscopy. The way that fertilization works in the hermaphrodite is that the mature sperm are found in this structure called the spermatheca, and as the oocytes are ovulated and mature they are pushed into the spermatheca where they interact with the sperm and become fertilized.</p>
+                        
+                        <div class="microscopy-showcase">
+                            <div class="microscopy-item">
+                                <img src="C-elegans-curled-with-eggs-inside.jpg" alt="Curled C. elegans DIC Imaging">
+                                <p class="microscopy-caption"><strong>Non-Invasive Profiling:</strong> Non-invasive DIC profile revealing internal developmental features without dissection.</p>
+                            </div>
+                            <div class="microscopy-item">
+                                <img src="fertilization-microscopy.png" alt="Fertilization Close-Up">
+                                <p class="microscopy-caption"><strong>In Vivo Ovulation Detail:</strong> Live view tracking sequential oocyte entry into the self-sperm chamber.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fact-card" id="card-lineage">
+                <div class="fact-header" onclick="toggleCard('card-lineage')">Complete Cellular Lineage</div>
+                <div class="fact-content">
+                    <div class="fact-body-inner">
+                        <p>Every single adult hermaphrodite possesses exactly 959 somatic cell nuclei. The invariant line-of-descent fate of every single cell has been completely cataloged from zygote to adult, making it easy to identify individual cellular defects or variations caused by developmental disruptions or targeted fertility anomalies.</p>
+                        <div class="microscopy-showcase">
+                            <div class="microscopy-item">
+                                <img src="cell-lineage.png" alt="C. elegans Cell Lineage Map">
+                                <p class="microscopy-caption"><strong>Lineage Tracking Map:</strong> Structural overview of the invariant, mapped somatic cell lineages from embryogenesis to maturity.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fact-card" id="card-breeding">
+                <div class="fact-header" onclick="toggleCard('card-breeding')">C. elegans Breeding</div>
+                <div class="fact-content">
+                    <div class="fact-body-inner">
+                        <p>Populations exist as self-fertilizing XX hermaphrodites (producing both eggs and self-sperm) alongside rare XO males. This unique mating architecture allows dangerous or fully sterilizing fertility mutations to be safely propagated and analyzed across multiple generations via male cross-breeding systems.</p>
+                        <div class="microscopy-showcase">
+                            <div class="microscopy-item">
+                                <img src="c.elegans-breeding.jpg" alt="Hermaphrodite Mating Cross Dynamics">
+                                <p class="microscopy-caption"><strong>Mating Cross Systems:</strong> Cross-breeding architecture showing genetic propagation of sterile mutant lines using heterozygous balancers.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fact-card" id="card-genetic">
+                <div class="fact-header" onclick="toggleCard('card-genetic')">Gene Editing</div>
+                <div class="fact-content">
+                    <div class="fact-body-inner">
+                        <p>Extremely responsive to genetic manipulation through high-throughput forward genetic screening or targeted reverse genetic editing techniques (such as systemic microinjected CRISPR cassettes or simple, cost-efficient feeding-based RNA interference protocols).</p>
+                        <div class="microscopy-showcase">
+                            <div class="microscopy-item">
+                                <img src="gene-editing.png" alt="Genetic Engineering Assays">
+                                <p class="microscopy-caption"><strong>Functional Genomics:</strong> Visualization tracking germline responses to targeted microinjection or selective gene-silencing arrays.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="references-wrapper">
+            <h4>Included Academic References:</h4>
+            <ul class="references-list">
+                <li>
+                    <strong>DIC Imaging Reference:</strong> 
+                    <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12999071/" target="_blank">PMC12999071 — Fig 8 activation</a>
+                </li>
+                <li>
+                    <strong>Fertilization Insights:</strong> 
+                    <a href="https://portlandpress.com/biochemist/article/44/5/9/231947/Fertilization-what-we-can-learn-from-worms" target="_blank">Fertilization insights reference</a>
+                </li>
+                <li>
+                    <strong>Classic Manuals:</strong> 
+                    <a href="https://www.ncbi.nlm.nih.gov/books/NBK20086/" target="_blank">NCBI Bookshelf — <em>C. elegans</em> II Database</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</main>
+
+<main id="page-sec1" class="page-view">
+    <section id="anatomy-comparison" class="section">
+        <div class="section-header">
+            <h2>Hermaphrodite vs. Male Anatomy</h2>
+            <p>A comparative look at the reproductive structures of the two <em>C. elegans</em> sexes.</p>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="anatomy-card hermaphrodite-card">
+                <div class="card-header"><span class="sex-symbol">⚥</span><h3>Hermaphrodite</h3></div>
+                <div class="image-container"><img src="hermaphrodite.png" alt="Hermaphrodite Anatomy"></div>
+                <div class="features-list">
+                    <h4>Key Features:</h4>
+                    <ul>
+                        <li><strong>Gonad:</strong> Two-armed symmetric, U-shaped layout.</li>
+                        <li><strong>Oocytes:</strong> Mature sequentially in single file prior to ovulation.</li>
+                        <li><strong>Spermatheca:</strong> Chamber where self-sperm is stored and fertilization happens.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="anatomy-card male-card">
+                <div class="card-header"><span class="sex-symbol">♂</span><h3>Male</h3></div>
+                <div class="image-container"><img src="male.png" alt="Male Anatomy"></div>
+                <div class="features-list">
+                    <h4>Key Features:</h4>
+                    <ul>
+                        <li><strong>Gonad:</strong> Single-armed asymmetric layout.</li>
+                        <li><strong>Seminal Vesicle:</strong> Internal storage repository for unactivated spermatids.</li>
+                        <li><strong>Copulatory Structures:</strong> Specialized tail rays and spicules for mating.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<main id="page-sec2" class="page-view">
+    <section id="germline-map" class="section">
+        <div class="section-header">
+            <h2>Spatiotemporal Germline Map (Hermaphrodite)</h2>
+            <p>Explore sequential zones of the adult hermaphrodite gonad arm.</p>
+        </div>
+
+        <div class="interactive-container">
+            <div class="visual-panel-left">
+                <div class="diagram-display-window">
+                    <img src="c.elegans_diagram.png" alt="C. elegans Germline Loop Diagram">
+                </div>
+                <div class="gonad-arm-visual">
+                    <div class="zone-block active" data-zone="mitotic" style="--accent-color: #000000;"><span class="zone-num">1</span><span class="zone-name">Mitotic Region</span></div>
+                    <div class="zone-block" data-zone="meiotic-entry" style="--accent-color: #00bcd4;"><span class="zone-num">2</span><span class="zone-name">Meiotic Entry</span></div>
+                    <div class="zone-block" data-zone="transition" style="--accent-color: #fbc02d;"><span class="zone-num">3</span><span class="zone-name">Transition Zone</span></div>
+                    <div class="zone-block" data-zone="pachytene" style="--accent-color: #32cd32;"><span class="zone-num">4</span><span class="zone-name">Pachytene Zone</span></div>
+                    <div class="zone-block" data-zone="diplotene" style="--accent-color: #ff9800;"><span class="zone-num">5</span><span class="zone-name">Diplotene</span></div>
+                    <div class="zone-block" data-zone="diakinesis" style="--accent-color: #9c27b0;"><span class="zone-num">6</span><span class="zone-name">Diakinesis</span></div>
+                </div>
+            </div>
+
+            <div class="info-panel" id="info-panel">
+                <h3 id="panel-title" style="color: #000000;">Mitotic Region</h3>
+                <div class="info-group">
+                    <h4>Cellular Events:</h4>
+                    <p id="panel-events">Contains proliferating pool of germ cells within a shared syncytial cytoplasm.</p>
+                </div>
+                <div class="info-group">
+                    <h4>Key Factors:</h4>
+                    <ul id="panel-genes" class="gene-tags"><li>glp-1</li><li>lag-2</li></ul>
+                </div>
+                <div class="info-group reference-box">
+                    <h4>Insights:</h4>
+                    <p id="panel-ref">Global profiles reveal strong suppression of X-chromosome expression throughout this early syncytial phase.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<main id="page-sec3" class="page-view">
+    <section id="spermatogenesis-section" class="section">
+        <div class="section-header">
+            <h2>Spermatogenesis & Molecular Pathways (WormBook Figure)</h2>
+            <p>Hover over any section of the master diagram below to view its distinct developmental dynamics and pathways.</p>
+        </div>
+
+        <div class="sperm-workspace">
+            <div class="diagram-interactive-canvas">
+                <div class="full-diagram-wrapper">
+                    <img src="wormbook-spermatogenesis-spermiogenesis.png" alt="Master Spermatogenesis Diagram">
+                    
+                    <div class="hotspot-overlay hs-meiosis1" data-target="meiosis1"></div>
+                    <div class="hotspot-overlay hs-meiosis2" data-target="meiosis2"></div>
+                    <div class="hotspot-overlay hs-budding" data-target="budding"></div>
+                    <div class="hotspot-overlay hs-spermatid" data-target="spermatid"></div>
+                    <div class="hotspot-overlay hs-activation" data-target="activation"></div>
+                    <div class="hotspot-overlay hs-fbmo" data-target="fbmo"></div>
+                </div>
+            </div>
+
+            <div class="sperm-desc-card">
+                <h3 id="sperm-title" style="color:#2563eb; margin:0 0 5px 0; line-height: 1.3;">Interactive Nematode Gamete Guide</h3>
+                <p id="sperm-intro" style="color:#64748b; margin:0;">Move your cursor over a section on the left to reveal targeted data.</p>
+                
+                <div id="sperm-details-box" style="display:none; flex-direction:column; gap:15px;">
+                    <div class="sperm-desc-content">
+                        <p id="sperm-text-summary"></p>
+                        <p id="sperm-text-organelles"></p>
+                    </div>
+                    
+                    <div id="activation-pathways-panel" style="display:none;">
+                        <h4 style="margin:12px 0 6px 0; font-size:0.85rem; text-transform:uppercase; letter-spacing: 0.05em; color:#64748b;">Differential Activation Pathways:</h4>
+                        <div class="pathway-box" style="--border-color: #06b6d4;">
+                            <strong>XO Male Pathway:</strong> Initiated externally by the secreted serine protease <code>try-5</code> during mating.
+                        </div>
+                        <div class="pathway-box" style="--border-color: #8b5cf6;">
+                            <strong>XX Hermaphrodite Pathway:</strong> Operates via self-activation through <code>spe-8</code>, <code>spe-12</code>, <code>spe-19</code>, <code>spe-27</code>, and <code>spe-29</code> complexes alongside zinc signaling networks.
+                        </div>
+                    </div>
+
+                    <div class="info-group">
+                        <h4 style="margin: 0 0 6px 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b;">Notable genes involved</h4>
+                        <ul id="sperm-panel-genes" class="gene-tags"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    /* --- MULTI-PAGE VIEW ROUTING ENGINE --- */
+    function switchPage(pageKey) {
+        document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active-view'));
+        document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+        
+        if(pageKey === 'home') {
+            document.getElementById('page-home').classList.add('active-view');
+            document.getElementById('lnk-home').classList.add('active');
+        } else if(pageKey === 'sec1') {
+            document.getElementById('page-sec1').classList.add('active-view');
+            document.getElementById('lnk-sec1').classList.add('active');
+        } else if(pageKey === 'sec2') {
+            document.getElementById('page-sec2').classList.add('active-view');
+            document.getElementById('lnk-sec2').classList.add('active');
+        } else if(pageKey === 'sec3') {
+            document.getElementById('page-sec3').classList.add('active-view');
+            document.getElementById('lnk-sec3').classList.add('active');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* --- HOME ACCORDION INTERACTION --- */
+    function toggleCard(cardId) {
+        const card = document.getElementById(cardId);
+        const isExpanded = card.classList.contains('expanded');
+        
+        // Collapse all others:
+        document.querySelectorAll('.fact-card').forEach(c => c.classList.remove('expanded'));
+        
+        // Toggle selected:
+        if (!isExpanded) {
+            card.classList.add('expanded');
+        }
+    }
+
+    /* --- SECTION 2 INTERACTIVE DATA ENGINE --- */
+    const germlineData = {
+        "mitotic": { title: "Mitotic Region", color: "#000000", events: "Proliferating pool of undifferentiated germ cells dividing mitotically within a shared syncytial cytoplasm.", genes: ["glp-1", "lag-2"], ref: "Strong suppression of X-chromosome expression is maintained here." },
+        "meiotic-entry": { title: "Meiotic Entry", color: "#00bcd4", events: "Germ cells exit mitosis and execute meiotic DNA replication.", genes: ["gld-1", "gld-2"], ref: "Controlled tightly by post-transcriptional networks." },
+        "transition": { title: "Transition Zone", color: "#fbc02d", events: "Entry into meiotic prophase I. Chromosomes pair up, creating crescent-shaped nuclear clustering outlines.", genes: ["chk-2", "sun-1"], ref: "Chromosome alignment transition phase." },
+        "pachytene": { title: "Pachytene Zone", color: "#32cd32", events: "Homologous chromosomes fully synapse. Recombination cross-over happens here.", genes: ["rec-8", "syp-2"], ref: "Intensive transcriptomic switch here." },
+        "diplotene": { title: "Diplotene", color: "#ff9800", events: "Synaptonemal complex breaks down. Remodeling chromosomes expand rapidly near the loop bend.", genes: ["gld-2"], ref: "Heavily monitored by CSR-1-dependent networks." },
+        "diakinesis": { title: "Diakinesis", color: "#9c27b0", events: "Oocytes complete cellularization, pinching out individual large cells with exactly 6 condensed bivalent pairs.", genes: ["oma-1", "lin-41"], ref: "Nuclei halt active transcription." }
+    };
+
+    document.querySelectorAll('.zone-block').forEach(block => {
+        block.addEventListener('mouseenter', () => {
+            document.querySelectorAll('.zone-block').forEach(b => b.classList.remove('active'));
+            block.classList.add('active');
+            const data = germlineData[block.getAttribute('data-zone')];
+            const panel = document.getElementById('info-panel');
+            panel.style.opacity = 0;
+            setTimeout(() => {
+                document.getElementById('panel-title').innerText = data.title;
+                document.getElementById('panel-title').style.color = data.color;
+                document.getElementById('panel-events').innerHTML = data.events;
+                document.getElementById('panel-ref').innerHTML = data.ref;
+                const genesUl = document.getElementById('panel-genes');
+                genesUl.innerHTML = '';
+                data.genes.forEach(g => { const li = document.createElement('li'); li.innerText = g; genesUl.appendChild(li); });
+                panel.style.opacity = 1;
+            }, 100);
+        });
+    });
+
+    /* --- SECTION 3 DATA HOVER ENGINE --- */
+    const spermNodes = {
+        "meiosis1": {
+            title: "Pachytene & Meiosis I",
+            summary: "Syncytial pachytene spermatocytes filled with internal Fibrous Body-Membranous Organelle (FB-MO) arrays exit the central cytoplasmic Rachis and undergo primary meiotic reduction.",
+            organelles: "Primary spermatocytes divide systematically while maintaining intact interior profiles of paired organelle complexes.",
+            genes: ["fog-1", "fog-3", "spe-44"]
+        },
+        "meiosis2": {
+            title: "Secondary Meiotic Division (Meiosis II)",
+            summary: "Secondary spermatocytes rapidly proceed through a second division axis to partition haploid elements. Chromosomes condense tightly into distinct dark spheres.",
+            organelles: "Meiotic nuclear divisions are indicated by cross-hatch interior lines on guide diagrams.",
+            genes: ["spe-44"]
+        },
+        "budding": {
+            title: "Spermatid Budding Phase",
+            summary: "Developing haploid spermatids individualize by expanding outward and budding symmetrically away from a core cytoplasm mass. Sorting requires <code>gsp-3</code>/<code>gsp-4</code> phosphatases.",
+            organelles: "Unnecessary structural material—actin, ribosomes, Golgi stacks—is excluded from spermatids and discarded inside the centralized **Residual Body**.",
+            genes: ["gsp-3", "gsp-4", "spe-6"]
+        },
+        "spermatid": {
+            title: "The Unactivated Spermatid",
+            summary: "A translationally silent, immotile spherical cell. Chromatin condenses completely into a uniform central mass (solid black circle). Premature initiation is kept blocked by active kinase brakes.",
+            organelles: "Complex, structurally stable FB-MO clusters reside uniformly throughout the dense cytoplasm, awaiting mating triggers.",
+            genes: ["spe-6", "gsk-3"]
+        },
+        "activation": {
+            title: "Spermiogenesis (Pseudopod Activation)",
+            summary: "A sweeping post-translational remodeling phase that triggers structural polarization and transforms the spherical spermatid into a motile crawling spermatozoon.",
+            organelles: "Fibrous bodies (FBs) disassemble fully to release <strong>Major Sperm Protein (MSP)</strong>, polymerizing it to push out the dynamic pseudopod engine. Concurrently, Membranous Organelles (MOs) migrate and fuse with the plasma membrane.",
+            genes: ["try-5", "spe-8", "spe-12", "spe-19", "spe-27", "spe-29"]
+        },
+        "fbmo": {
+            title: "Fibrous Body and Membranous Organelle Complex Formation is Essential for Sperm Maturation",
+            summary: "High-magnification developmental progression tracking. Fibrous bodies (FB) develop wrapped directly within the double-layered membranes of the membranous organelles (MO).",
+            organelles: "Upon activation, the MO head (h) travels directly beneath the plasma membrane (pm), fusing at its specialized collar region to form open surface fusion pores.",
+            genes: ["spe-4", "spe-10", "spe-39"]
+        }
+    };
+
+    const introText = document.getElementById('sperm-intro');
+    const detailsBox = document.getElementById('sperm-details-box');
+    const outTitle = document.getElementById('sperm-title');
+    const outSummary = document.getElementById('sperm-text-summary');
+    const outOrganelles = document.getElementById('sperm-text-organelles');
+    const outGenesUl = document.getElementById('sperm-panel-genes');
+    const activationPathsPanel = document.getElementById('activation-pathways-panel');
+
+    document.querySelectorAll('.hotspot-overlay').forEach(hotspot => {
+        hotspot.addEventListener('mouseenter', () => {
+            document.querySelectorAll('.hotspot-overlay').forEach(h => h.classList.remove('active'));
+            hotspot.classList.add('active');
+
+            const key = hotspot.getAttribute('data-target');
+            const data = spermNodes[key];
+            
+            introText.style.display = 'none';
+            detailsBox.style.display = 'flex';
+            
+            outTitle.innerText = data.title;
+            outSummary.innerHTML = data.summary;
+            outOrganelles.innerHTML = data.organelles;
+
+            if (key === "activation") {
+                activationPathsPanel.style.display = "block";
+            } else {
+                activationPathsPanel.style.display = "none";
+            }
+
+            outGenesUl.innerHTML = '';
+            data.genes.forEach(g => {
+                const li = document.createElement('li');
+                li.innerHTML = `<code>${g}</code>`;
+                outGenesUl.appendChild(li);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
